@@ -1,5 +1,4 @@
 /* Check if A-Frame is available */
-
 if (typeof AFRAME === "undefined") {
   throw new Error(
     "Component attempted to register before AFRAME was available."
@@ -7,20 +6,34 @@ if (typeof AFRAME === "undefined") {
 }
 
 /* Check if AvatarConnect is available */
-
 if (typeof AvatarConnect === "undefined") {
   throw new Error(
     "Component attempted to register before AvatarConnect was available."
   );
 }
 
+const PROVIDER_LOADERS = {
+  "ready-player-me": function (avatarEl) {
+    avatarEl.setAttribute("rig-animation", {
+      remoteId:
+        // TODO: Currently, this is bound to the animation file from the example. This should be generalized.
+        this.data.metadata.outfitGender === "masculine"
+          ? "animated-m"
+          : "animated-f",
+      clip: "IDLE",
+      loop: "repeat",
+      crossFadeDuration: 0,
+    });
+  },
+};
+
 /**
- * AvatarConnect component for A-Frame.
+ * Main AvatarConnect A-Frame component. Handles AvatarConnect iFrame, receives data from the bridge and creates an avatar component based on received data.
  */
 AFRAME.registerComponent("avatar-connect", {
   schema: {
     configuration: {
-      default: [["ready-player-me", { gateway: "mona" }], "meebits"],
+      default: '[["ready-player-me", { "gateway": "demo" }], "meebits"]',
       parse: JSON.parse,
       stringify: JSON.stringify,
     },
@@ -47,10 +60,10 @@ AFRAME.registerComponent("avatar-connect", {
       padding: this.data.padding,
     });
 
-    this.connector.on("result", (result) => {
-      this.el.emit("avatar-connect:avatar-received", result.avatar);
-      this.createAvatar(result.avatar);
-      this.el.emit("avatar-connect:avatar-created", result.avatar);
+    this.connector.on("result", (bridgeResult) => {
+      this.el.emit("avatar-connect:avatar-received", bridgeResult);
+      this.createAvatar(bridgeResult);
+      this.el.emit("avatar-connect:avatar-created", bridgeResult);
     });
 
     this.connector.on("error", (error) => {
@@ -122,26 +135,34 @@ AFRAME.registerComponent("avatar-connect", {
   onCloseModal: function (event) {
     this.el.emit("avatar-connect:close-modal");
   },
-  createAvatar: function (avatar) {
+  createAvatar: function (bridgeResult) {
     var avatarEl = document.createElement("a-entity");
-    // TODO: should be on and off turnable
     avatarEl.setAttribute("avatar-connect-avatar", {
-      uri: avatar.uri,
-      format: avatar.format,
+      providerId: bridgeResult.provider,
+      uri: bridgeResult.avatar.uri,
+      format: bridgeResult.avatar.format,
       showPodest: true,
+      // TODO: Find a better way to provide JSON to a component.
+      metadata: JSON.stringify(bridgeResult.metadata),
     });
     this.el.appendChild(avatarEl);
   },
 });
 
 /**
- * AvatarConnect Avatar component for A-Frame.
+ * AvatarConnect avatar component. Creates an avatar in the scene based on data provided from AvatarConnect A-Frame component.
  */
 AFRAME.registerComponent("avatar-connect-avatar", {
   schema: {
-    uri: { default: "" },
-    format: { default: "glb" },
-    showPodest: { default: true },
+    providerId: { default: "", type: "string" },
+    uri: { default: "", type: "string" },
+    format: { default: "glb", type: "string" },
+    metadata: {
+      default: "{}",
+      parse: JSON.parse,
+      stringify: JSON.stringify,
+    },
+    showPodest: { default: true, type: "boolean" },
   },
 
   /**
@@ -152,9 +173,9 @@ AFRAME.registerComponent("avatar-connect-avatar", {
   /**
    * Called once when component is attached. Generally for initial setup.
    */
-  init: async function () {
+  init: function () {
     if (this.data.uri) {
-      await this.createAvatar();
+      this.createAvatar();
     } else {
       this.el.emit("avatar-connect:error", "Avatar URI is empty");
       console.error("URI is empty");
@@ -199,28 +220,22 @@ AFRAME.registerComponent("avatar-connect-avatar", {
   /**
    * Custom helper functions
    */
-  createAvatar: async function () {
+  createAvatar: function () {
     var avatarEl = document.createElement("a-entity");
     // TODO: support more formats and providers
     switch (this.data.format) {
       case "glb":
-        const gender = await this.getRPMGender(this.data.uri);
-        avatarEl.setAttribute("gltf-model", this.data.uri);
-        // This is experimental. Adds a rig animation to RPM avatars
-        avatarEl.setAttribute("rig-animation", {
-          remoteId: gender,
-          clip: "IDLE",
-          loop: "repeat",
-          crossFadeDuration: 0,
-        });
-        break;
       case "vrm":
-        // As VRM is based on GLTF, we can load it with the same loader
         avatarEl.setAttribute("gltf-model", this.data.uri);
-        // VRM specification requires humanoid models to look into -z direction
-        // avatarEl.setAttribute("rotation", "0 -180 0");
         break;
       default:
+        return;
+    }
+
+    const providerLoader = PROVIDER_LOADERS[this.data.providerId];
+    // Call the custom provider loader if it exists
+    if (providerLoader) {
+      providerLoader.call(this, avatarEl);
     }
 
     if (this.data.showPodest) {
@@ -245,12 +260,6 @@ AFRAME.registerComponent("avatar-connect-avatar", {
     );
 
     this.el.appendChild(avatarEl);
-  },
-  getRPMGender: async function (avatarUri) {
-    const jsonUrl = avatarUri.replace(".glb", ".json");
-    const response = await fetch(jsonUrl);
-    const data = await response.json();
-    return data.outfitGender === "masculine" ? "animated-m" : "animated-f";
   },
   deleteAvatar: function () {
     this.el.children[0].removeChild();
