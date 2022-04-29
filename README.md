@@ -111,6 +111,26 @@ It builds the app for production to the `dist` folder. It contains a minified an
 | `avatar-connect:avatar-received` | Emitted when the AvatarConnect bridge has responded with an avatar                       | `{ avatar: { format: 'glb', type: 'humanoid', uri: 'https://d1a370nemizbjq.cloudfront.net/64144f87-52ad-4eb7-be05-c2d05078fe91.glb', metadata: null, provider: 'readyplayerme', version: '1.0.0' }` |
 | `avatar-connect:avatar-created`  | Emitted when the avatar component is placed in the scene and displays the current avatar | `{ avatar: { format: 'glb', type: 'humanoid', uri: 'https://d1a370nemizbjq.cloudfront.net/64144f87-52ad-4eb7-be05-c2d05078fe91.glb', metadata: null, provider: 'readyplayerme', version: '1.0.0' }` |
 
+### Custom provider modules
+
+Each avatar provider can provide a custom module to extend the generalized functionality of AvatarConnect. E.g., use different rigging for different providers as their bone structure differs from each other. Feel free to contribute your very own provider module, please check [Contributing](#contributing) for further instructions. A provider module is a function that receives the Avatar element `avatarEl` as a parameter and additionally gets access to the context of the component bind to `this`, specifically to `this.data`. To illustrate, here is an example adding a custom idle animation to ReadyPlayerMe avatars by using the rig-animation component:
+
+```javascript
+const PROVIDER_LOADERS = {
+  "ready-player-me": function (avatarEl) {
+    avatarEl.setAttribute("rig-animation", {
+      remoteId:
+        this.data.metadata.outfitGender === "masculine"
+          ? "animated-m"
+          : "animated-f",
+      clip: "IDLE",
+      loop: "repeat",
+      crossFadeDuration: 0,
+    });
+  },
+};
+```
+
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
