@@ -33,7 +33,7 @@ const PROVIDER_LOADERS = {
 AFRAME.registerComponent("avatar-connect", {
   schema: {
     configuration: {
-      default: '[["ready-player-me", { "gateway": "demo" }], "meebits"]',
+      default: "[]",
       parse: JSON.parse,
       stringify: JSON.stringify,
     },
