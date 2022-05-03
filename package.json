@@ -1,0 +1,75 @@
+{
+  "name": "@avatarconnect/aframe",
+  "version": "0.0.1",
+  "description": "A-Frame component for AvatarConnect",
+  "main": "index.js",
+  "scripts": {
+    "dev": "webpack serve --progress --color",
+    "dist": "npm run dist:min && npm run dist:max",
+    "dist:max": "webpack --config webpack.config.js",
+    "dist:min": "webpack --config webpack.prod.config.js",
+    "prepublish": "npm run dist",
+    "start": "npm run dev",
+    "lint": "eslint *.js"
+  },
+  "files": [
+    "/dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AvatarConnect/AFrameSDK.git"
+  },
+  "keywords": [
+    "AvatarConnect",
+    "metaverse",
+    "aframe",
+    "aframe-component",
+    "aframe-vr",
+    "vr",
+    "webvr",
+    "webxr"
+  ],
+  "author": "Protocol Labs Inc.",
+  "license": "MIT",
+  "contributors": [
+    {
+      "name": "Tobias Petrasch",
+      "email": "tobias.petrasch@protocol.ai",
+      "url": "https://www.petrasch.io"
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/AvatarConnect/AFrameSDK/issues"
+  },
+  "homepage": "https://github.com/AvatarConnect/AFrameSDK#readme",
+  "devDependencies": {
+    "@babel/core": "~7.17.5",
+    "@babel/plugin-transform-runtime": "^7.17.0",
+    "@babel/preset-env": "~7.16.11",
+    "aframe": "~1.3.0",
+    "babel-loader": "^8.2.3",
+    "eslint": "^6.6.0",
+    "webpack": "^5.69.1",
+    "webpack-cli": "^4.9.2",
+    "webpack-dev-middleware": "^5.3.1",
+    "webpack-dev-server": "^4.8.1",
+    "@babel/polyfill": "^7.12.1"
+  },
+  "engines": {
+    "node": ">= 8.10.0",
+    "npm": ">= 4.0.5"
+  },
+  "babel": {
+    "presets": [
+      "@babel/preset-env"
+    ],
+    "plugins": [
+      [
+        "@babel/plugin-transform-runtime",
+        {
+          "regenerator": true
+        }
+      ]
+    ]
+  }
+}
